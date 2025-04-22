@@ -1,15 +1,17 @@
 bl_info = {
     "name": "Inertial Parameters Calculator",
+    "blender": (4, 0, 0),
     "category": "Object",
 }
 
 import bpy
 import mathutils
 
-class OBJECT_OT_select_meshes_in_selected(bpy.types.Operator):
+class ObjectSelectMeshesInSelected(bpy.types.Operator):
     bl_idname = "object.select_meshes_in_selected"
-    bl_label = "Select meshes in selected objects"
+    bl_label = "Mesh Selector"
     bl_description = "Select all meshes that are included in the selected objects"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
         if not context.selected_objects: # if 
@@ -23,10 +25,11 @@ class OBJECT_OT_select_meshes_in_selected(bpy.types.Operator):
         self.report({'INFO'}, f"Stored {len(selected_names)} selected object(s).")
         return {'FINISHED'}
 
-class OBJECT_OT_reselect_recent_selection(bpy.types.Operator):
+class ObjectReselectRecentSelection(bpy.types.Operator):
     bl_idname = "object.reselect_recent_selection"
-    bl_label = "Reselect objects after inspecting the meshes"
-    bl_description = "Reselect objects after inspecting the meshes"
+    bl_label = "Reselect Previous Selection"
+    bl_description = "Reselect objects that has been selected previously"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
         stored_names = context.scene.get("stored_objects_names", [])
@@ -38,10 +41,11 @@ class OBJECT_OT_reselect_recent_selection(bpy.types.Operator):
         self.report({'INFO'}, f"Restored {len(stored_names)} object(s).")
         return {'FINISHED'}
     
-class OBJECT_OT_combine_and_compute_mesh_inertial_params(bpy.types.Operator):
+class ObjectCombineComputeMeshInertialParams(bpy.types.Operator):
     bl_idname = "object.combine_and_compute_mesh_inertial_params"
-    bl_label = "Combine meshes and compute its inertial parameters"
+    bl_label = "Mesh Combine and Compute"
     bl_description = "Combine meshes and compute its inertial parameters"
+    bl_options = {'REGISTER', 'UNDO'}
     
     mesh_collection: bpy.props.StringProperty(name="Collection name", default="meshes_to_calculate")
     mesh_name: bpy.props.StringProperty(name="Mesh name")
@@ -86,10 +90,11 @@ class OBJECT_OT_combine_and_compute_mesh_inertial_params(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
-class OBJECT_OT_compute_mesh_inertial_params(bpy.types.Operator):
+class ObjectRecomputeMeshInertialParams(bpy.types.Operator):
     bl_idname = "object.compute_mesh_inertial_params"
-    bl_label = "Compute mesh inertial parameters"
-    bl_description = "Compute mesh inertial parameters"
+    bl_label = "Recompute Inertial Params"
+    bl_description = "Recompute mesh inertial parameters"
+    bl_options = {'REGISTER', 'UNDO'}
     
     mesh_mass: bpy.props.FloatProperty(name="Mesh mass (grams)")
     
@@ -120,10 +125,11 @@ class OBJECT_OT_compute_mesh_inertial_params(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
     
 
-class OBJECT_OT_compute_collection_inertial_params(bpy.types.Operator):
+class ObjectComputeCollectionInertialParams(bpy.types.Operator):
     bl_idname = "object.compute_collection_inertial_params"
-    bl_label = "Compute inertial parameters of the whole meshes together"
+    bl_label = "Compute Collection Inertial Params"
     bl_description = "Compute inertial parameters of the whole meshes together that reside in the selected collection"
+    bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
         num_of_selected_objects = len(context.selected_ids)
@@ -218,20 +224,47 @@ class OBJECT_OT_compute_collection_inertial_params(bpy.types.Operator):
         selected_id["Total Mass"] = total_mass
         
         return {'FINISHED'}
-        
+
+addon_keymaps = []
+
 def register():
-    bpy.utils.register_class(OBJECT_OT_select_meshes_in_selected)
-    bpy.utils.register_class(OBJECT_OT_reselect_recent_selection)
-    bpy.utils.register_class(OBJECT_OT_combine_and_compute_mesh_inertial_params)
-    bpy.utils.register_class(OBJECT_OT_compute_collection_inertial_params)
-    bpy.utils.register_class(OBJECT_OT_compute_mesh_inertial_params)
-    OBJECT_OT_compute_mesh_inertial_params
+    bpy.utils.register_class(ObjectSelectMeshesInSelected)
+    bpy.utils.register_class(ObjectReselectRecentSelection)
+    bpy.utils.register_class(ObjectCombineComputeMeshInertialParams)
+    bpy.utils.register_class(ObjectComputeCollectionInertialParams)
+    bpy.utils.register_class(ObjectRecomputeMeshInertialParams)
+    
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if kc:
+        km = wm.keyconfigs.addon.keymaps.new(name='Outliner', space_type='OUTLINER')
+        
+        kmi = km.keymap_items.new(ObjectSelectMeshesInSelected.bl_idname, 'M', 'PRESS', alt=True)
+        addon_keymaps.append((km, kmi))
+        
+        kmi = km.keymap_items.new(ObjectReselectRecentSelection.bl_idname, 'N', 'PRESS', alt=True)
+        addon_keymaps.append((km, kmi))
+        
+        kmi = km.keymap_items.new(ObjectCombineComputeMeshInertialParams.bl_idname, 'J', 'PRESS', alt=True)
+        addon_keymaps.append((km, kmi))
+        
+        kmi = km.keymap_items.new(ObjectComputeCollectionInertialParams.bl_idname, 'U', 'PRESS', alt=True)
+        addon_keymaps.append((km, kmi))
+        
+        kmi = km.keymap_items.new(ObjectRecomputeMeshInertialParams.bl_idname, 'Y', 'PRESS', alt=True)
+        addon_keymaps.append((km, kmi))
+    
 def unregister():
-    bpy.utils.unregister_class(OBJECT_OT_select_meshes_in_selected)
-    bpy.utils.unregister_class(OBJECT_OT_reselect_recent_selection)
-    bpy.utils.unregister_class(OBJECT_OT_combine_and_compute_mesh_inertial_params)
-    bpy.utils.unregister_class(OBJECT_OT_compute_collection_inertial_params)
-    bpy.utils.unregister_class(OBJECT_OT_compute_mesh_inertial_params)
+	# Remove the hotkey
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+    
+    bpy.utils.unregister_class(ObjectSelectMeshesInSelected)
+    bpy.utils.unregister_class(ObjectReselectRecentSelection)
+    bpy.utils.unregister_class(ObjectCombineComputeMeshInertialParams)
+    bpy.utils.unregister_class(ObjectComputeCollectionInertialParams)
+    bpy.utils.unregister_class(ObjectRecomputeMeshInertialParams)
 
 def select_all_meshes_from_predefined_list(the_list):
     bpy.ops.object.select_all(action='DESELECT')  # Deselect everything first
