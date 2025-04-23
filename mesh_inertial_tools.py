@@ -308,11 +308,16 @@ def select_all_meshes_from_predefined_list(the_list):
         if obj is None:
             print(f"Object {obj.name} not found. Continuing...")
             continue
-        print(f"Selecting meshes inside {obj.name}...")
-        for child in obj.children_recursive:
-            if child.type == 'MESH':
-                mesh_children.append(child)
-                child.select_set(True)
+        if obj.type == 'MESH':
+            print(f"Selected object is a mesh. Putting the selected object in the list ({obj.name})...")
+            mesh_children.append(obj)
+            obj.select_set(True)
+        else:
+            print(f"Selecting meshes inside {obj.name}...")
+            for child in obj.children_recursive:
+                if child.type == 'MESH':
+                    mesh_children.append(child)
+                    child.select_set(True)
                 
     print("All meshes in the list are selected")
     return mesh_children
