@@ -40,7 +40,36 @@ class ObjectReselectRecentSelection(bpy.types.Operator):
                 obj.select_set(True)
         self.report({'INFO'}, f"Restored {len(stored_names)} object(s).")
         return {'FINISHED'}
+
+class ObjectCombineMesh(bpy.types.Operator):
+    bl_idname = "object.combine_mesh"
+    bl_label = "Mesh Combiner"
+    bl_description = "Combine several meshes into one single mesh and move it into a collection"
+    bl_options = {'REGISTER', 'UNDO'}
     
+    mesh_collection: bpy.props.StringProperty(name="Collection name", default="combined_meshes")
+    mesh_name: bpy.props.StringProperty(name="Mesh name")
+    
+    def execute(self, context):
+        objects_names = context.scene.get("stored_objects_names", [])
+        meshes_storage_name = self.mesh_collection
+        combined_mesh_name = self.mesh_name
+        
+        if meshes_storage_name in bpy.data.collections:
+            meshes_storage = bpy.data.collections[meshes_storage_name]
+        else:
+            meshes_storage = bpy.data.collections.new(meshes_storage_name)
+            bpy.context.scene.collection.children.link(meshes_storage)
+            
+        combined_mesh = combine_meshes_from_predefined_list(objects_names, combined_mesh_name, True, meshes_storage)
+        combined_mesh_real_name = combined_mesh.name # Get the actual name because Blender might add some suffix to avoid naming duplicates
+        
+        self.report({'INFO'}, f"self.mesh_collection:'{self.mesh_collection}' mesh_name:'{combined_mesh_real_name}'.")
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
 class ObjectCombineComputeMeshInertialParams(bpy.types.Operator):
     bl_idname = "object.combine_and_compute_mesh_inertial_params"
     bl_label = "Mesh Combine and Compute"
@@ -230,6 +259,7 @@ addon_keymaps = []
 def register():
     bpy.utils.register_class(ObjectSelectMeshesInSelected)
     bpy.utils.register_class(ObjectReselectRecentSelection)
+    bpy.utils.register_class(ObjectCombineMesh)
     bpy.utils.register_class(ObjectCombineComputeMeshInertialParams)
     bpy.utils.register_class(ObjectComputeCollectionInertialParams)
     bpy.utils.register_class(ObjectRecomputeMeshInertialParams)
@@ -243,6 +273,9 @@ def register():
         addon_keymaps.append((km, kmi))
         
         kmi = km.keymap_items.new(ObjectReselectRecentSelection.bl_idname, 'N', 'PRESS', alt=True)
+        addon_keymaps.append((km, kmi))
+        
+        kmi = km.keymap_items.new(ObjectCombineMesh.bl_idname, 'J', 'PRESS', shift=True)
         addon_keymaps.append((km, kmi))
         
         kmi = km.keymap_items.new(ObjectCombineComputeMeshInertialParams.bl_idname, 'J', 'PRESS', alt=True)
@@ -262,6 +295,7 @@ def unregister():
     
     bpy.utils.unregister_class(ObjectSelectMeshesInSelected)
     bpy.utils.unregister_class(ObjectReselectRecentSelection)
+    bpy.utils.unregister_class(ObjectCombineMesh)
     bpy.utils.unregister_class(ObjectCombineComputeMeshInertialParams)
     bpy.utils.unregister_class(ObjectComputeCollectionInertialParams)
     bpy.utils.unregister_class(ObjectRecomputeMeshInertialParams)
