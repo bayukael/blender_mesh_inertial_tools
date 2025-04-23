@@ -79,7 +79,7 @@ class ObjectCombineComputeMeshInertialParams(bpy.types.Operator):
     mesh_collection: bpy.props.StringProperty(name="Collection name", default="meshes_to_calculate")
     mesh_name: bpy.props.StringProperty(name="Mesh name")
     mesh_mass: bpy.props.FloatProperty(name="Mesh mass (grams)")
-    voxel_size: bpy.props.FloatProperty(name="Voxel size (mm)", default=0.002)
+    voxel_size: bpy.props.FloatProperty(name="Voxel size", default=0.002)
     
     def execute(self, context):
         objects_names = context.scene.get("stored_objects_names", [])
